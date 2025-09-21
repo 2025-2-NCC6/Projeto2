@@ -1,0 +1,49 @@
+int pinoTemp = A0;
+int pinoLuz = A1;
+int pinoLuz70 = 6;
+int pinoLuz100 = 7;
+int pino23 = 8;
+int pino27 = 9;
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(pinoTemp, INPUT);
+  pinMode(pinoLuz, INPUT);
+  pinMode(pinoLuz70, OUTPUT);
+  pinMode(pinoLuz100, OUTPUT);
+  pinMode(pino23, OUTPUT);
+  pinMode(pino27, OUTPUT);
+}
+
+void loop()
+{
+  int valorPot = analogRead(pinoTemp);
+  float valorLuz = analogRead(pinoLuz);
+  
+  int Volts = (valorPot / 1024.0) * 5000;
+  
+  int tempC = (Volts-500) * 0.1;
+  
+  Serial.println(valorLuz);   
+  delay(100);
+  
+  if(tempC >= 23 && tempC < 27){
+    digitalWrite(pino23, HIGH);
+    digitalWrite(pino27, LOW);
+  }else if(tempC >= 27){
+  	digitalWrite(pino23, LOW);
+    digitalWrite(pino27, HIGH);
+  }else{
+  	digitalWrite(pino23, LOW);
+    digitalWrite(pino27, LOW);
+  }
+  
+  if(valorLuz >= 600){
+    digitalWrite(pinoLuz100, LOW);
+    digitalWrite(pinoLuz70, HIGH);
+  }else if(valorLuz < 600){
+    digitalWrite(pinoLuz100, HIGH);
+    digitalWrite(pinoLuz70, LOW);
+  }
+}
