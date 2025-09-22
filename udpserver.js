@@ -1,15 +1,49 @@
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
+
 // udp_server.js
-const dgram = require("dgram");
+import dgram from "dgram";
 
 // Create a UDP socket
 const server = dgram.createSocket("udp4");
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD9g9kp1B82YeNIKBZnSyW5_mnjSRn32qo",
+  authDomain: "controlap-39602.firebaseapp.com",
+  databaseURL: "https://controlap-39602-default-rtdb.firebaseio.com",
+  projectId: "controlap-39602",
+  storageBucket: "controlap-39602.firebasestorage.app",
+  messagingSenderId: "712598597437",
+  appId: "1:712598597437:web:4e92d7ca6dd80b0de79f54",
+  measurementId: "G-J5E106SJQ1",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+console.log("Firebase conectado!");
+
+async function adicionarUsuario() {
+  try {
+    const docRef = await addDoc(collection(db, "usuarios"), {
+      nome: "Vitor",
+      idade: 25,
+      email: "vitor@email.com",
+    });
+    console.log("Documento adicionado com ID: ", docRef.id);
+  } catch (e) {
+    console.error("Erro ao adicionar documento: ", e);
+  }
+}
+
+
 
 // Configuration
 const LISTEN_PORT = 41234; // port to listen on
 const LISTEN_HOST = "0.0.0.0"; // listen on all network interfaces
 
 const TARGET_PORT = 5000; // port of the other device
-const TARGET_HOST = "121.128.1.100"; // IP of the other device
+const TARGET_HOST = "192.168.15.3"; // IP of the other device
 
 // When a message is received
 server.on("message", (msg, rinfo) => {
@@ -22,6 +56,7 @@ server.on("message", (msg, rinfo) => {
       console.error("Error sending message:", err);
     } else {
       console.log(`Message sent to ${TARGET_HOST}:${TARGET_PORT}`);
+      adicionarUsuario();
     }
   });
 });
