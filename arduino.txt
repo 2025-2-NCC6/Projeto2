@@ -1,0 +1,35 @@
+#include "DHT.h"
+
+#define pinoDHT 2
+#define tipoDHT DHT11
+
+int pinoMio = 6;
+
+DHT dht(pinoDHT, tipoDHT);
+
+void setup()
+{
+  Serial.begin(9600);
+  dht.begin();
+}
+
+void loop()
+{
+  delay(500);
+  float temperatura = dht.readTemperature();
+
+  if(isnan(temperatura)){
+    Serial.println("Erro ao ler temperatura");
+    return;
+  }
+
+  if(temperatura > 20){
+    digitalWrite(pinoMio, HIGH);
+    analogWrite(pinoMio, 255);
+  }else{
+    digitalWrite(pinoMio, LOW);
+  }
+  Serial.print("Temperatura: ");
+  Serial.print(temperatura);
+  Serial.println(" °C");
+}
