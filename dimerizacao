@@ -1,0 +1,24 @@
+// Pinos dos sensores
+const int pinoldr = A0;
+const int pinoled = 6;
+
+void setup() {
+  pinMode(pinoldr, INPUT);
+  pinMode(pinoled, OUTPUT);
+  
+  Serial.begin(9600);
+}
+
+void loop() {
+  long leitura = analogRead(pinoldr);
+  
+  Serial.println(leitura);
+
+  while(leitura > 400){
+    analogWrite(pinoled, leitura / 4);
+    leitura = analogRead(pinoldr);
+    Serial.println(leitura);
+  }
+  analogWrite(pinoled, 0);
+  
+}
