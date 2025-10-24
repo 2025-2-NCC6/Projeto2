@@ -5,6 +5,7 @@
 
 const int PINO_DT = 27;
 const int PINO_SCK = 26;
+const int LED_PIN = 34;
 
 const int TEMPO_ESPERA = 3000;
 float fator_calibracao = -83000;
@@ -52,6 +53,7 @@ void loop() {
     Serial.print(peso, 2);
     Serial.println(" kg");
 
+    buscarDados();
     enviarPesoHTTP(peso);
   } else {
     Serial.println("HX711 ocupado ou desconectado!");
@@ -93,4 +95,48 @@ void enviarPesoHTTP(float peso) {
   }
 
   http.end();
+}
+
+void buscarDados(){
+   HTTPClient http;
+    http.begin("https://khprnw-3000.csb.app/buscarDadosTago");  // Inicia conexão
+
+    int httpCode = http.GET(); // Faz requisição GET
+
+    if (httpCode > 0) {
+      String payload = http.getString();
+      Serial.println("Resposta:");
+      Serial.println(payload);
+
+      // Parse do JSON
+      StaticJsonDocument<200> doc;
+      DeserializationError error = deserializeJson(doc, payload);
+
+      if (!error) {
+        float peso = doc["peso"];
+        int temperatura = doc["temperatura"];
+        const char* ledloja = doc["ledloja"];
+
+        Serial.printf("Peso: %.3f\n", peso);
+        Serial.printf("Temperatura: %d\n", temperatura);
+        Serial.printf("LedLoja: %s\n", ledloja);
+
+        // Aciona o LED conforme o valor
+        if (strcmp(ledloja, "activate") == 0) {
+          digitalWrite(LED_PIN, HIGH);
+          Serial.println("LED ATIVADO");
+        } else {
+          digitalWrite(LED_PIN, LOW);
+          Serial.println("LED DESLIGADO");
+        }
+      } else {
+        Serial.println("Erro ao parsear JSON");
+      }
+
+    } else {
+      Serial.printf("Erro na requisição HTTP: %d\n", httpCode);
+    }
+
+    http.end(); // Libera recursos
+  }
 }
