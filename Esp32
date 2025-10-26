@@ -1,0 +1,185 @@
+// Importando bibliotecas
+#include <ArduinoJson.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <HX711.h>
+#include "DHT.h"
+
+// Definindo variáveis
+const int pinoDHT = 2;
+const int PINO_DT = 27;
+const int PINO_SCK = 26;
+const int LED_PIN = 19;
+const int LED_VERDE_PIN = 23;
+const int LED_AMARELO_PIN = 22;
+const int TEMPO_ESPERA = 3000;
+float fator_calibracao = -83000;
+#define tipoDHT DHT11
+
+// Instanciando objetos
+HX711 escala;
+DHT dht(pinoDHT, tipoDHT);
+
+// Configurações de rede do Esp32
+const char* ssid = "xxx";
+const char* password = "xxx";
+const char* tagoToken = "xxx";
+
+void setup() {
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(LED_VERDE_PIN, OUTPUT);
+  pinMode(LED_AMARELO_PIN, OUTPUT);
+  dht.begin();
+
+  Serial.begin(115200);
+  delay(2000);
+
+  Serial.println("=== Célula de carga - Calibração de Peso via HTTP ===");
+
+  WiFi.begin(ssid, password);
+  Serial.print("Conectando ao Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWi-Fi conectado!");
+  Serial.print("IP: "); Serial.println(WiFi.localIP());
+
+  escala.begin(PINO_DT, PINO_SCK);
+  if (!escala.is_ready()) {
+    Serial.println("HX711 não está pronto! Verifique as conexões.");
+  }
+
+  float media_leitura = escala.read_average();
+  Serial.print("Média de leituras sem carga: ");
+  Serial.println(media_leitura, 2);
+
+  escala.tare();
+  Serial.println("Balança zerada.");
+}
+
+void loop() {
+  escala.set_scale(fator_calibracao);
+
+  if (escala.is_ready()) {
+    float peso = escala.get_units();
+    Serial.print("Leitura: ");
+    Serial.print(peso, 2);
+    Serial.println(" kg");
+
+    buscarDados();
+    enviarHTTP("peso", peso, "kg");
+  } else {
+    Serial.println("HX711 ocupado ou desconectado!");
+  }
+
+  float temperatura = capturarTemperatura();
+  enviarHTTP("temperatura", temperatura, "°C");
+
+  delay(TEMPO_ESPERA);
+}
+
+float capturarTemperatura(){
+  float temperatura = dht.readTemperature();
+
+  if(isnan(temperatura)){
+    Serial.println("Erro ao ler temperatura");
+    return 0.0;
+  }
+
+  Serial.print("Temperatura: ");
+  Serial.print(temperatura);
+  Serial.println(" °C");
+
+  return temperatura;
+}
+
+void enviarHTTP(char* nome, float var, char* unidade) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("⚠️ Wi-Fi não conectado!");
+    return;
+  }
+
+  HTTPClient http;
+  http.begin("https://api.tago.io/data");
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Device-Token", tagoToken);
+
+  DynamicJsonDocument doc(200);
+  JsonArray arr = doc.to<JsonArray>();
+  JsonObject obj = arr.createNestedObject();
+  obj["variable"] = nome;
+  obj["value"] = var;
+  obj["unit"] = unidade;
+
+  String payload;
+  serializeJson(doc, payload);
+
+  int httpResponseCode = http.POST(payload);
+
+  if (httpResponseCode > 0) {
+    Serial.print("📤 Dados enviados! Código HTTP: ");
+    Serial.println(httpResponseCode);
+  } else {
+    Serial.print("⚠️ Erro ao enviar dados: ");
+    Serial.println(http.errorToString(httpResponseCode));
+  }
+
+  http.end();
+}
+
+void buscarDados(){
+   HTTPClient http;
+    http.begin("https://khprnw-3000.csb.app/buscarDadosTago");  // Inicia conexão
+
+    int httpCode = http.GET(); // Faz requisição GET
+
+    if (httpCode > 0) {
+      String payload = http.getString();
+      Serial.println("Resposta:");
+      Serial.println(payload);
+
+      // Parse do JSON
+      StaticJsonDocument<200> doc;
+      DeserializationError error = deserializeJson(doc, payload);
+
+      if (!error) {
+        float peso = doc["peso"];
+        int temperatura = doc["temperatura"];
+        const char* ledloja = doc["ledloja"];
+        const char* cor = doc["cor"];
+
+        Serial.printf("Peso: %.3f\n", peso);
+        Serial.printf("Temperatura: %d\n", temperatura);
+        Serial.printf("LedLoja: %s\n", ledloja);
+        Serial.printf("Cor Led Prateleira: %s\n", cor);
+
+        // Aciona o LED conforme o valor
+        if (strcmp(ledloja, "activate") == 0) {
+          digitalWrite(LED_PIN, HIGH);
+          Serial.println("LED ATIVADO");
+        } else {
+          digitalWrite(LED_PIN, LOW);
+          Serial.println("LED DESLIGADO");
+        }
+
+        // Define a cor da prateleira
+        if (strcmp(cor, "verde") == 0) {
+          digitalWrite(LED_VERDE_PIN, HIGH);
+          digitalWrite(LED_AMARELO_PIN, LOW);
+          Serial.println("LED VERDE ATIVADO");
+        } else if (strcmp(cor, "amarelo") == 0){
+          digitalWrite(LED_VERDE_PIN, LOW);
+          digitalWrite(LED_AMARELO_PIN, HIGH);
+          Serial.println("LED AMARELO ATIVADO");
+        }
+      } else {
+        Serial.println("Erro ao parsear JSON");
+      }
+
+    } else {
+      Serial.printf("Erro na requisição HTTP: %d\n", httpCode);
+    }
+
+    http.end(); // Libera recursos
+}
