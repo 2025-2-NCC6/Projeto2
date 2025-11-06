@@ -1,0 +1,22 @@
+// Pino de entrada
+const int entrada = A0;
+const int saida = 9;
+void setup() {
+  Serial.begin(9600);      // Inicia a comunicação serial (9600 baud)
+  pinMode(entrada, INPUT); // Define o pino 3 como entrada
+  pinMode(saida, OUTPUT);
+}
+
+void loop() {
+  int valor = analogRead(entrada); // Lê o valor do pino (0 ou 1)
+  
+  if(valor > 200){
+    digitalWrite(saida,HIGH);
+  }else{
+    digitalWrite(saida,LOW);
+  }
+  Serial.print("Valor lido na porta 3: ");
+  Serial.println(valor);   // Imprime o valor no monitor serial
+  
+  delay(500);              // Aguarda 500 ms para facilitar a leitura
+}
