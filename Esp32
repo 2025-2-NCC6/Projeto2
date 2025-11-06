@@ -7,9 +7,11 @@
 
 // Definindo variáveis
 const int pinoDHT = 2;
+const int pinoLuz = 33;
 const int PINO_DT = 27;
 const int PINO_SCK = 26;
 const int LED_PIN = 19;
+const int AR_PIN = 27;
 const int LED_VERDE_PIN = 23;
 const int LED_AMARELO_PIN = 22;
 const int TEMPO_ESPERA = 3000;
@@ -21,9 +23,9 @@ HX711 escala;
 DHT dht(pinoDHT, tipoDHT);
 
 // Configurações de rede do Esp32
-const char* ssid = "xxx";
-const char* password = "xxx";
-const char* tagoToken = "xxx";
+const char* ssid = "Tokunaga";
+const char* password = "zetsu2025";
+const char* tagoToken = "53b9c773-1b1d-4c33-9805-ea36485ee8cb";
 
 void setup() {
   pinMode(LED_PIN, OUTPUT);
@@ -74,7 +76,9 @@ void loop() {
   }
 
   float temperatura = capturarTemperatura();
-  enviarHTTP("temperatura", temperatura, "°C");
+  float luminosidade = capturarLuminosidade();
+  enviarHTTP("temperaturaLoja", temperatura, "°C");
+  enviarHTTP("luminosidadeLoja", luminosidade, " ");
 
   delay(TEMPO_ESPERA);
 }
@@ -92,6 +96,24 @@ float capturarTemperatura(){
   Serial.println(" °C");
 
   return temperatura;
+}
+
+
+float capturarLuminosidade() {
+  int leitura = analogRead(pinoLuz);
+
+  if (leitura < 0) {
+    Serial.println("Erro: leitura inválida do sensor de luz.");
+    return 0.0;
+  }
+
+  float luminosidade = (leitura / 4095.0) * 100.0;
+
+  Serial.print("Luminosidade: ");
+  Serial.print(luminosidade, 2);
+  Serial.println(" %");
+
+  return luminosidade;
 }
 
 void enviarHTTP(char* nome, float var, char* unidade) {
@@ -128,9 +150,43 @@ void enviarHTTP(char* nome, float var, char* unidade) {
   http.end();
 }
 
+void enviarHTTP(char* nome, char* var, char* unidade) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("⚠️ Wi-Fi não conectado!");
+    return;
+  }
+
+  HTTPClient http;
+  http.begin("https://api.tago.io/data");
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Device-Token", tagoToken);
+
+  DynamicJsonDocument doc(200);
+  JsonArray arr = doc.to<JsonArray>();
+  JsonObject obj = arr.createNestedObject();
+  obj["variable"] = nome;
+  obj["value"] = var;
+  obj["unit"] = unidade;
+
+  String payload;
+  serializeJson(doc, payload);
+
+  int httpResponseCode = http.POST(payload);
+
+  if (httpResponseCode > 0) {
+    Serial.print("📤 Dados enviados! Código HTTP: ");
+    Serial.println(httpResponseCode);
+  } else {
+    Serial.print("⚠️ Erro ao enviar dados: ");
+    Serial.println(http.errorToString(httpResponseCode));
+  }
+
+  http.end();
+}
+
 void buscarDados(){
    HTTPClient http;
-    http.begin("https://khprnw-3000.csb.app/buscarDadosTago");  // Inicia conexão
+    http.begin("https://khprnw-3001.csb.app/buscarDadosTago");  // Inicia conexão
 
     int httpCode = http.GET(); // Faz requisição GET
 
@@ -145,8 +201,11 @@ void buscarDados(){
 
       if (!error) {
         float peso = doc["peso"];
+        float luminosidadeloja = doc["luminosidadeloja"];
         int temperatura = doc["temperatura"];
         const char* ledloja = doc["ledloja"];
+        const char* arcondicionadoloja = doc["arcondicionadoloja"];
+        const char* automacoes = doc["automacoes"];
         const char* cor = doc["cor"];
 
         Serial.printf("Peso: %.3f\n", peso);
@@ -154,25 +213,55 @@ void buscarDados(){
         Serial.printf("LedLoja: %s\n", ledloja);
         Serial.printf("Cor Led Prateleira: %s\n", cor);
 
-        // Aciona o LED conforme o valor
-        if (strcmp(ledloja, "activate") == 0) {
-          digitalWrite(LED_PIN, HIGH);
-          Serial.println("LED ATIVADO");
-        } else {
-          digitalWrite(LED_PIN, LOW);
-          Serial.println("LED DESLIGADO");
+        if (strcmp(automacoes, "activate") == 0) {
+            if (luminosidadeloja > 50.00) {
+              digitalWrite(LED_PIN, HIGH);
+              enviarHTTP("ledloja", "activate", "");
+              Serial.println("LED LOJA ATIVADO");
+            } else {
+              digitalWrite(LED_PIN, LOW);
+              enviarHTTP("ledloja", "deactivate", "");
+              Serial.println("LED LOJA DESATIVADO");
+            }
+
+            if (temperatura > 21.00) {
+              digitalWrite(AR_PIN, HIGH);
+              enviarHTTP("arcondicionadoloja", "activate", "");
+              Serial.println("AR CONDICIONADO LOJA ATIVADO");
+            } else {
+              digitalWrite(AR_PIN, LOW);
+              enviarHTTP("arcondicionadoloja", "deactivate", "");
+              Serial.println("AR CONDICIONADO LOJA DESATIVADO");
+            }
+        }else if (strcmp(automacoes, "deactivate") == 0){
+          if (strcmp(ledloja, "activate") == 0) {
+            digitalWrite(LED_PIN, HIGH);
+            Serial.println("LED ATIVADO");
+          } else {
+            digitalWrite(LED_PIN, LOW);
+            Serial.println("LED DESLIGADO");
+          }
+
+          if (strcmp(arcondicionadoloja, "activate") == 0) {
+            digitalWrite(AR_PIN, HIGH);
+            Serial.println("AR CONDICIONADO LOJA ATIVADO");
+          } else {
+            digitalWrite(AR_PIN, LOW);
+            Serial.println("AR CONDICIONADO LOJA DESATIVADO");
+          }
         }
 
-        // Define a cor da prateleira
         if (strcmp(cor, "verde") == 0) {
-          digitalWrite(LED_VERDE_PIN, HIGH);
-          digitalWrite(LED_AMARELO_PIN, LOW);
-          Serial.println("LED VERDE ATIVADO");
-        } else if (strcmp(cor, "amarelo") == 0){
-          digitalWrite(LED_VERDE_PIN, LOW);
-          digitalWrite(LED_AMARELO_PIN, HIGH);
-          Serial.println("LED AMARELO ATIVADO");
+            digitalWrite(LED_VERDE_PIN, HIGH);
+            digitalWrite(LED_AMARELO_PIN, LOW);
+            Serial.println("LED VERDE ATIVADO");
+        }else if (strcmp(cor, "amarelo") == 0){
+            digitalWrite(LED_VERDE_PIN, LOW);
+            digitalWrite(LED_AMARELO_PIN, HIGH);
+            Serial.println("LED AMARELO ATIVADO");
         }
+
+        
       } else {
         Serial.println("Erro ao parsear JSON");
       }
