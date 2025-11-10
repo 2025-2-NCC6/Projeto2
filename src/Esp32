@@ -23,9 +23,9 @@ HX711 escala;
 DHT dht(pinoDHT, tipoDHT);
 
 // Configurações de rede do Esp32
-const char* ssid = "Tokunaga";
-const char* password = "zetsu2025";
-const char* tagoToken = "53b9c773-1b1d-4c33-9805-ea36485ee8cb";
+const char* ssid = "*";
+const char* password = "*";
+const char* tagoToken = "*";
 
 void setup() {
   pinMode(LED_PIN, OUTPUT);
