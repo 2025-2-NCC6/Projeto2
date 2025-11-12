@@ -26,7 +26,7 @@ class ControLapApp extends StatelessWidget {
         '/dashboard': (_) => const DashboardScreen(),
         '/estoque': (_) => const EstoqueScreen(),
         '/luzes': (_) => const LuzesScreen(),
-        '/ar': (_) => const ArCondicionadoScreen(),
+        '/ar': (_) => const LuzesArScreen(),
         '/alertas': (_) => const AlertasScreen(),
       },
     );

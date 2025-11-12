@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_appbar.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LuzesScreen extends StatefulWidget {
   const LuzesScreen({super.key});
@@ -9,20 +11,110 @@ class LuzesScreen extends StatefulWidget {
 }
 
 class _LuzesScreenState extends State<LuzesScreen> {
-  bool luz1 = true;
-  bool luz2 = false;
-  bool luz3 = true;
+  bool? luzLoja;
+  bool? luzEstoque;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    getStatusLuzes();
+  }
+
+  bool parseStatus(dynamic value) {
+    if (value is String) {
+      final v = value.toLowerCase();
+      if (v == 'activate') return true;
+      if (v == 'deactivate') return false;
+    }
+    return false;
+  }
+
+  Future<void> getStatusLuzes() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://khprnw-3001.csb.app/statusLuzes'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          luzLoja = parseStatus(data['ledloja']);
+          luzEstoque = parseStatus(data['ledestoque']);
+          isLoading = false; // terminou o carregamento
+        });
+      } else {
+        print('Erro na requisição: ${response.statusCode}');
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print('Erro ao buscar status das luzes: $e');
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> alterarLuzLoja(bool status) async {
+    try {
+      final url = status
+          ? 'https://khprnw-3001.csb.app/ligarLuzLoja'
+          : 'https://khprnw-3001.csb.app/desligarLuzLoja';
+
+      final response = await http.post(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        print('Luz Loja atualizada com sucesso!');
+        await Future.delayed(const Duration(seconds: 1));
+        await getStatusLuzes();
+      } else {
+        print('Erro na requisição: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro ao alterar status da luz da loja: $e');
+    }
+  }
+
+  Future<void> alterarLuzEstoque(bool status) async {
+    try {
+      final url = status
+          ? 'https://khprnw-3001.csb.app/ligarLuzEstoque'
+          : 'https://khprnw-3001.csb.app/desligarLuzEstoque';
+
+      final response = await http.post(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        print('Luz Estoque atualizada com sucesso!');
+        await Future.delayed(const Duration(seconds: 1));
+        await getStatusLuzes();
+      } else {
+        print('Erro na requisição: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro ao alterar status da luz do estoque: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(title: "Luzes"),
-      body: ListView(
+      body: isLoading
+          ? const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFFFC61A),
+        ),
+      )
+          : ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _switchTile("Luz Estoque", luz1, (v) => setState(() => luz1 = v)),
-          _switchTile("Luz Principal 1", luz2, (v) => setState(() => luz2 = v)),
-          _switchTile("Luz Principal 2", luz3, (v) => setState(() => luz3 = v)),
+          _switchTile("Luzes Estoque", luzEstoque!, (v) {
+            setState(() => luzEstoque = v);
+            alterarLuzEstoque(v);
+          }),
+          _switchTile("Luzes Loja", luzLoja!, (v) {
+            setState(() => luzLoja = v);
+            alterarLuzLoja(v);
+          }),
         ],
       ),
     );
