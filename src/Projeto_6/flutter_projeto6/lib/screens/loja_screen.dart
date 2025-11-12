@@ -1,0 +1,410 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ControLAP',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: const Color(0xFFFFC61A),
+        scaffoldBackgroundColor: const Color(0xFF1C1C1C), // Fundo principal
+        fontFamily: 'Roboto',
+      ),
+      home: const LojaScreen(),
+    );
+  }
+}
+
+class LojaScreen extends StatefulWidget {
+  const LojaScreen({super.key});
+
+  @override
+  State<LojaScreen> createState() => _LojaScreenState();
+}
+
+class _LojaScreenState extends State<LojaScreen> {
+  bool isLoading = true;
+  bool automacoes = true;
+  bool luzesLoja = true;
+  bool arCondicionado = true;
+  double temperatura = 25.0;
+  int unidades_trufas = 0;
+
+  final Color _cardBackgroundColor = const Color(0xFF2A2A2A);
+  final Color _accentColor = const Color(0xFFFFC61A);
+
+  @override
+  void initState() {
+    super.initState();
+    getStatusLoja();
+  }
+
+  bool parseStatus(dynamic value) {
+    if (value is String) {
+      final v = value.toLowerCase();
+      if (v == 'activate') return true;
+      if (v == 'deactivate') return false;
+    }
+    return false;
+  }
+
+
+  Future<void> getStatusLoja() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://khprnw-3001.csb.app/statusLoja'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          automacoes = parseStatus(data['automacoes']);
+          luzesLoja = parseStatus(data['ledloja']);
+          arCondicionado = parseStatus(data['arcondicionadoloja']);
+
+          // BUG CORRIGIDO: O valor de fallback deve ser um double, não uma string
+          temperatura = (data['temperatura'] as num?)?.toDouble() ?? 25.0;
+
+          unidades_trufas = data['unidades_trufas'];
+
+          isLoading = false; // <<< ADICIONADO AQUI
+        });
+      } else {
+        print('Erro na requisição: ${response.statusCode}');
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print('Erro ao buscar status da loja: $e');
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> alterarArLoja(bool status) async {
+    try {
+      final url = status
+          ? 'https://khprnw-3001.csb.app/ligarArCondicionadoLoja'
+          : 'https://khprnw-3001.csb.app/desligarArCondicionadoLoja';
+
+      final response = await http.post(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        print('Luz loja atualizada com sucesso!');
+        await Future.delayed(const Duration(seconds: 1));
+        await getStatusLoja();
+      } else {
+        print('Erro na requisição: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro ao alterar status da luz do loja: $e');
+    }
+  }
+
+  Future<void> alterarLuzLoja(bool status) async {
+    try {
+      final url = status
+          ? 'https://khprnw-3001.csb.app/ligarLuzLoja'
+          : 'https://khprnw-3001.csb.app/desligarLuzLoja';
+
+      final response = await http.post(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        print('Luz Loja atualizada com sucesso!');
+        await Future.delayed(const Duration(seconds: 1));
+        await getStatusLoja();
+      } else {
+        print('Erro na requisição: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro ao alterar status da luz do Loja: $e');
+    }
+  }
+
+  Future<void> alterarEstadoAutomacoes(bool status) async {
+    try {
+      final url = status
+          ? 'https://khprnw-3001.csb.app/ativarAutomacoes'
+          : 'https://khprnw-3001.csb.app/desativarAutomacoes';
+
+      final response = await http.post(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        print('Automações atualizadas com sucesso!');
+        await Future.delayed(const Duration(seconds: 1));
+        await getStatusLoja();
+      } else {
+        print('Erro na requisição: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro ao alterar status das automações: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: _buildBody(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.black,
+      elevation: 0,
+      toolbarHeight: 60,
+      title: Row(
+        children: [
+          Image.asset(
+            'assets/logo.png',
+            height: 40,
+          ),
+          const SizedBox(width: 40), // Do EstoqueScreen
+          Text(
+            "LOJA",
+            style: TextStyle(
+              color: _accentColor, // Cor de destaque
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(width: 30),
+          const Text(
+            "ESTOQUE",
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          const SizedBox(width: 30),
+          const Text(
+            "LUZES/AR",
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- MODIFICADO ---
+  // 3. Lógica de isLoading aplicada aqui
+  /// Constrói o corpo principal da tela
+  Widget _buildBody() {
+    // Se estiver carregando, mostra o indicador
+    if (isLoading) {
+      return Center(
+        child: CircularProgressIndicator(
+          color: _accentColor, // Usa a cor de destaque
+        ),
+      );
+    }
+
+    // Se não estiver carregando, mostra o conteúdo
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 2,
+              child: _buildLeftColumn(),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              flex: 3,
+              child: _buildRightColumn(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Constrói a coluna da esquerda (Termostato e Prateleiras)
+  Widget _buildLeftColumn() {
+    return Column(
+      children: [
+        _buildThermostatCard(),
+        const SizedBox(height: 20),
+        _buildShelvesCard(),
+      ],
+    );
+  }
+
+  Widget _buildRightColumn() {
+    return Column(
+      children: [
+        _buildControllersCard(),
+      ],
+    );
+  }
+
+  Widget _buildThermostatCard() {
+    double minTemp = 5.0;
+    double maxTemp = 50.0;
+    double progress = (temperatura - minTemp) / (maxTemp - minTemp);
+
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _cardBackgroundColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+              child: CircularProgressIndicator(
+                value: progress.clamp(0.0, 1.0), // Usa o progresso calculado
+                strokeWidth: 12,
+                backgroundColor: Colors.white.withOpacity(0.1),
+                valueColor: AlwaysStoppedAnimation<Color>(_accentColor),
+              ),
+            ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                "${temperatura.toStringAsFixed(1)}°C",
+                  style: const TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShelvesCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _cardBackgroundColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Prateleiras',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Trufa',
+                style: TextStyle(fontSize: 18, color: Colors.white70),
+              ),
+              Text(
+                'Unidades: $unidades_trufas', // Usa as unidades reais
+                style: const TextStyle(fontSize: 18, color: Colors.white70),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildControllersCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _cardBackgroundColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Controladores',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildControllerRow(
+            'Automações',
+            automacoes, // Usa o estado real
+                (newValue) {
+              setState(() => automacoes = newValue);
+              alterarEstadoAutomacoes(newValue);
+            },
+          ),
+          _buildControllerRow(
+            'Luz',
+            luzesLoja,
+                (newValue) {
+              setState(() => luzesLoja = newValue);
+              alterarLuzLoja(newValue);
+            },
+          ),
+          _buildControllerRow(
+            'Ar-condicionado',
+            arCondicionado, // Usa o estado real
+                (newValue) {
+              setState(() => arCondicionado = newValue);
+              alterarArLoja(newValue);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Widget auxiliar para uma linha de controle (Texto + Switch)
+  Widget _buildControllerRow(
+      String title, bool value, ValueChanged<bool> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              color: Colors.white,
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: _accentColor, // Cor de destaque atualizada
+            activeTrackColor: _accentColor.withOpacity(0.5),
+            inactiveThumbColor: Colors.grey,
+            inactiveTrackColor: Colors.grey.withOpacity(0.4),
+          ),
+        ],
+      ),
+    );
+  }
+}

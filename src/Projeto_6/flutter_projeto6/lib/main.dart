@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
 import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'screens/loja_screen.dart';
 import 'screens/estoque_screen.dart';
 import 'screens/luzes_screen.dart';
 import 'screens/ar_condicionado_screen.dart';
@@ -23,7 +23,7 @@ class ControLapApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (_) => const LoginScreen(),
-        '/dashboard': (_) => const DashboardScreen(),
+        '/dashboard': (_) => const LojaScreen(),
         '/estoque': (_) => const EstoqueScreen(),
         '/luzes': (_) => const LuzesScreen(),
         '/ar': (_) => const LuzesArScreen(),
