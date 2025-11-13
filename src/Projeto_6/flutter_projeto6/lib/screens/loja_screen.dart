@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'loja_screen.dart';
+import 'alertas_screen.dart';
+import 'estoque_screen.dart';
 import 'dart:convert';
 
 void main() {
@@ -17,7 +20,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: const Color(0xFFFFC61A),
-        scaffoldBackgroundColor: const Color(0xFF1C1C1C), // Fundo principal
+        scaffoldBackgroundColor: const Color(0xFF1C1C1C),
         fontFamily: 'Roboto',
       ),
       home: const LojaScreen(),
@@ -40,8 +43,6 @@ class _LojaScreenState extends State<LojaScreen> {
   double temperatura = 25.0;
   int unidades_trufas = 0;
 
-  final Color _cardBackgroundColor = const Color(0xFF2A2A2A);
-  final Color _accentColor = const Color(0xFFFFC61A);
 
   @override
   void initState() {
@@ -73,12 +74,11 @@ class _LojaScreenState extends State<LojaScreen> {
           luzesLoja = parseStatus(data['ledloja']);
           arCondicionado = parseStatus(data['arcondicionadoloja']);
 
-          // BUG CORRIGIDO: O valor de fallback deve ser um double, não uma string
           temperatura = (data['temperatura'] as num?)?.toDouble() ?? 25.0;
 
           unidades_trufas = data['unidades_trufas'];
 
-          isLoading = false; // <<< ADICIONADO AQUI
+          isLoading = false;
         });
       } else {
         print('Erro na requisição: ${response.statusCode}');
@@ -152,6 +152,11 @@ class _LojaScreenState extends State<LojaScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    const Color background = Color(0xFF111111);
+    const Color cardColor = Color(0xFF1E1E1E);
+    const Color accentColor = Color(0xFFFFC61A);
+
     return Scaffold(
       appBar: _buildAppBar(),
       body: _buildBody(),
@@ -163,50 +168,52 @@ class _LojaScreenState extends State<LojaScreen> {
       backgroundColor: Colors.black,
       elevation: 0,
       toolbarHeight: 60,
+      automaticallyImplyLeading: false,
       title: Row(
         children: [
           Image.asset(
             'assets/logo.png',
             height: 40,
           ),
-          const SizedBox(width: 40), // Do EstoqueScreen
-          Text(
-            "LOJA",
-            style: TextStyle(
-              color: _accentColor, // Cor de destaque
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+          const SizedBox(width: 40),
+          InkWell(
+            onTap: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LojaScreen()));
+            },
+            child: const Text("LOJA",
+                style: TextStyle(color: Color(0xFFFFC61A), fontWeight: FontWeight.bold,
+                    fontSize: 16)),
           ),
           const SizedBox(width: 30),
-          const Text(
-            "ESTOQUE",
-            style: TextStyle(color: Colors.white, fontSize: 16),
+          InkWell(
+            onTap: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => EstoqueScreen()));
+            },
+            child: const Text("ESTOQUE",
+                style: TextStyle(color: Colors.white, fontSize: 16)),
           ),
           const SizedBox(width: 30),
-          const Text(
-            "LUZES/AR",
-            style: TextStyle(color: Colors.white, fontSize: 16),
+          InkWell(
+            onTap: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AlertasScreen()));
+            },
+            child: const Text("ALERTAS",
+                style: TextStyle(color: Colors.white, fontSize: 16)),
           ),
         ],
       ),
     );
   }
 
-  // --- MODIFICADO ---
-  // 3. Lógica de isLoading aplicada aqui
-  /// Constrói o corpo principal da tela
   Widget _buildBody() {
-    // Se estiver carregando, mostra o indicador
     if (isLoading) {
       return Center(
         child: CircularProgressIndicator(
-          color: _accentColor, // Usa a cor de destaque
+          color: Color(0xFFFFC61A),
         ),
       );
     }
 
-    // Se não estiver carregando, mostra o conteúdo
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -228,7 +235,6 @@ class _LojaScreenState extends State<LojaScreen> {
     );
   }
 
-  /// Constrói a coluna da esquerda (Termostato e Prateleiras)
   Widget _buildLeftColumn() {
     return Column(
       children: [
@@ -257,7 +263,7 @@ class _LojaScreenState extends State<LojaScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: _cardBackgroundColor,
+          color: Color(0xFF111111),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Stack(
@@ -267,10 +273,10 @@ class _LojaScreenState extends State<LojaScreen> {
               width: double.infinity,
               height: double.infinity,
               child: CircularProgressIndicator(
-                value: progress.clamp(0.0, 1.0), // Usa o progresso calculado
+                value: progress.clamp(0.0, 1.0),
                 strokeWidth: 12,
                 backgroundColor: Colors.white.withOpacity(0.1),
-                valueColor: AlwaysStoppedAnimation<Color>(_accentColor),
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC61A)),
               ),
             ),
             Column(
@@ -298,7 +304,7 @@ class _LojaScreenState extends State<LojaScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: _cardBackgroundColor,
+        color: Color(0xFF111111),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -317,11 +323,11 @@ class _LojaScreenState extends State<LojaScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Trufa',
+                'Trufa de Chocolate',
                 style: TextStyle(fontSize: 18, color: Colors.white70),
               ),
               Text(
-                'Unidades: $unidades_trufas', // Usa as unidades reais
+                'Unidades: $unidades_trufas',
                 style: const TextStyle(fontSize: 18, color: Colors.white70),
               ),
             ],
@@ -336,7 +342,7 @@ class _LojaScreenState extends State<LojaScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: _cardBackgroundColor,
+        color: Color(0xFF111111),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -353,7 +359,7 @@ class _LojaScreenState extends State<LojaScreen> {
           const SizedBox(height: 16),
           _buildControllerRow(
             'Automações',
-            automacoes, // Usa o estado real
+            automacoes,
                 (newValue) {
               setState(() => automacoes = newValue);
               alterarEstadoAutomacoes(newValue);
@@ -369,7 +375,7 @@ class _LojaScreenState extends State<LojaScreen> {
           ),
           _buildControllerRow(
             'Ar-condicionado',
-            arCondicionado, // Usa o estado real
+            arCondicionado,
                 (newValue) {
               setState(() => arCondicionado = newValue);
               alterarArLoja(newValue);
@@ -380,7 +386,6 @@ class _LojaScreenState extends State<LojaScreen> {
     );
   }
 
-  /// Widget auxiliar para uma linha de controle (Texto + Switch)
   Widget _buildControllerRow(
       String title, bool value, ValueChanged<bool> onChanged) {
     return Padding(
@@ -398,8 +403,8 @@ class _LojaScreenState extends State<LojaScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: _accentColor, // Cor de destaque atualizada
-            activeTrackColor: _accentColor.withOpacity(0.5),
+            activeColor: Color(0xFFFFC61A),
+            activeTrackColor: Color(0xFFFFC61A).withOpacity(0.5),
             inactiveThumbColor: Colors.grey,
             inactiveTrackColor: Colors.grey.withOpacity(0.4),
           ),

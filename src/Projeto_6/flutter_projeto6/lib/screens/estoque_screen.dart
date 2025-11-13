@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'alertas_screen.dart';
+import 'loja_screen.dart';
+import 'estoque_screen.dart';
 import 'dart:convert';
 
 class EstoqueScreen extends StatefulWidget {
@@ -115,6 +118,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
         backgroundColor: Colors.black,
         elevation: 0,
         toolbarHeight: 60,
+        automaticallyImplyLeading: false,
         title: Row(
           children: [
             Image.asset(
@@ -122,17 +126,32 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
               height: 40,
             ),
             const SizedBox(width: 40),
-            const Text("HOME",
-                style: TextStyle(color: Colors.white, fontSize: 16)),
+            InkWell(
+              onTap: () {
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LojaScreen()));
+              },
+              child: const Text("LOJA",
+                  style: TextStyle(color: Colors.white, fontSize: 16)),
+            ),
             const SizedBox(width: 30),
-            const Text("ESTOQUE",
-                style: TextStyle(
-                    color: accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16)),
+            InkWell(
+              onTap: () {
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => EstoqueScreen()));
+              },
+              child: const Text("ESTOQUE",
+                  style: TextStyle(
+                      color: accentColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
+            ),
             const SizedBox(width: 30),
-            const Text("LUZES/AR",
-                style: TextStyle(color: Colors.white, fontSize: 16)),
+            InkWell(
+              onTap: () {
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AlertasScreen()));
+              },
+              child: const Text("ALERTAS",
+                  style: TextStyle(color: Colors.white, fontSize: 16)),
+            ),
           ],
         ),
       ),
@@ -147,7 +166,6 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // === Painel de produtos ===
             Expanded(
               flex: 2,
               child: Container(
