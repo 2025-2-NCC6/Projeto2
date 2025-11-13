@@ -3,8 +3,6 @@ import 'theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/loja_screen.dart';
 import 'screens/estoque_screen.dart';
-import 'screens/luzes_screen.dart';
-import 'screens/ar_condicionado_screen.dart';
 import 'screens/alertas_screen.dart';
 
 void main() {
@@ -25,8 +23,6 @@ class ControLapApp extends StatelessWidget {
         '/': (_) => const LoginScreen(),
         '/dashboard': (_) => const LojaScreen(),
         '/estoque': (_) => const EstoqueScreen(),
-        '/luzes': (_) => const LuzesScreen(),
-        '/ar': (_) => const LuzesArScreen(),
         '/alertas': (_) => const AlertasScreen(),
       },
     );
