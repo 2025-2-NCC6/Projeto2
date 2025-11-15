@@ -1,24 +1,37 @@
-const int pinoEntrada = 4; 
-const int pinoSaida = 8;
+const int pinoEntradaLuzLoja = 4; 
+const int pinoEntradaArLoja = 12;
+const int pinoSaidaLuzLoja = 8;
+const int pinoSaidaArLoja = 9;
 
 void setup() {
-  pinMode(pinoEntrada, INPUT);
-  pinMode(pinoSaida, OUTPUT);
+  pinMode(pinoEntradaLuzLoja, INPUT);
+  pinMode(pinoEntradaArLoja, INPUT);
+  pinMode(pinoSaidaLuzLoja, OUTPUT);
+  pinMode(pinoSaidaArLoja, OUTPUT);
 
   Serial.begin(9600);
   Serial.println("Programa iniciado. Monitorando Porta 4.");
 }
 
 void loop() {
-  int estadoEntrada = digitalRead(pinoEntrada);
+  int estadoEntradaLuzLoja = digitalRead(pinoEntradaLuzLoja);
+  int estadoEntradaArLoja = digitalRead(pinoEntradaArLoja);
 
-  if (estadoEntrada == HIGH) {
-    digitalWrite(pinoSaida, HIGH);
+  if (estadoEntradaLuzLoja == HIGH) {
+    digitalWrite(pinoSaidaLuzLoja, HIGH);
     Serial.println("Entrada (Pino 4): HIGH -> Saída (Pino 8): HIGH");
   } else {
-    digitalWrite(pinoSaida, LOW);
+    digitalWrite(pinoSaidaLuzLoja, LOW);
     Serial.println("Entrada (Pino 4): LOW -> Saída (Pino 8): LOW");
   }
 
-  delay(10);
+  if (estadoEntradaArLoja == HIGH) {
+    digitalWrite(pinoSaidaArLoja, HIGH);
+    Serial.println("Entrada (Pino 5): HIGH -> Saída (Pino 9): HIGH");
+  } else {
+    digitalWrite(pinoSaidaArLoja, LOW);
+    Serial.println("Entrada (Pino 5): LOW -> Saída (Pino 9): LOW");
+  }
+
+  delay(2000);
 }
