@@ -18,7 +18,7 @@ const int LED_VERDE_PIN = 23;
 const int LED_AMARELO_PIN = 22;
 const int TEMPO_ESPERA = 3000;
 float fator_calibracao1 = -83000;
-float fator_calibracao2 = -100000000;
+float fator_calibracao2 = -83000;
 #define tipoDHT DHT11
 
 // Instanciando objetos
@@ -35,6 +35,7 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   pinMode(LED_VERDE_PIN, OUTPUT);
   pinMode(LED_AMARELO_PIN, OUTPUT);
+  pinMode(AR_PIN, OUTPUT);
   dht.begin();
 
   Serial.begin(115200);
