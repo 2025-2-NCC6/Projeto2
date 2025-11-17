@@ -1,5 +1,5 @@
 const int pinoEntradaLuzLoja = 4; 
-const int pinoEntradaArLoja = 12;
+const int pinoEntradaArLoja = 3;
 const int pinoSaidaLuzLoja = 8;
 const int pinoSaidaArLoja = 9;
 
