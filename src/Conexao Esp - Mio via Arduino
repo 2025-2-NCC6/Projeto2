@@ -2,11 +2,14 @@ const int pinoEntradaLuzLoja = 4;
 const int pinoEntradaArLoja = 3;
 const int pinoSaidaLuzLoja = 8;
 const int pinoSaidaArLoja = 9;
+const int pinoSaidaArLojaDesligar = 10;
+
 
 void setup() {
   pinMode(pinoEntradaLuzLoja, INPUT);
   pinMode(pinoEntradaArLoja, INPUT);
   pinMode(pinoSaidaLuzLoja, OUTPUT);
+  pinMode(pinoSaidaArLojaDesligar, OUTPUT);
   pinMode(pinoSaidaArLoja, OUTPUT);
 
   Serial.begin(9600);
@@ -27,8 +30,10 @@ void loop() {
 
   if (estadoEntradaArLoja == HIGH) {
     digitalWrite(pinoSaidaArLoja, HIGH);
+    digitalWrite(pinoSaidaArLojaDesligar, LOW);
     Serial.println("Entrada (Pino 5): HIGH -> Saída (Pino 9): HIGH");
   } else {
+    digitalWrite(pinoSaidaArLojaDesligar, HIGH);
     digitalWrite(pinoSaidaArLoja, LOW);
     Serial.println("Entrada (Pino 5): LOW -> Saída (Pino 9): LOW");
   }
