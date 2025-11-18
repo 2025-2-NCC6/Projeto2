@@ -41,12 +41,23 @@ class _AlertasScreenState extends State<AlertasScreen> {
         Uri.parse('https://khprnw-3001.csb.app/statusAlertas'),
       );
 
-      if (response.statusCode == 200) {
+      final response2 = await http.get(
+        Uri.parse('https://vq8lhp-5000.csb.app/predict?pais=1&continente=1&produto=1&tamanho=1&tipo_Bars=false&tipo_Bites=true&tipo_Other=false'),
+      );
+
+      if (response.statusCode == 200 && response2.statusCode == 200) {
         final data = jsonDecode(response.body);
+        final data2 = jsonDecode(response2.body);
         final List<String> generatedAlerts = [];
 
-
+        final int caixas_necessarias = data2['quantidade_caixas_previstas'];
+        final int caixas_estoque = data['caixas_trufas'];
         final double temperatura = (data['temperatura'] as num?)?.toDouble() ?? 25.0;
+
+        if(caixas_estoque < caixas_necessarias){
+          generatedAlerts.add("Caixas de trufas de chocolate em estoque insuficientes");
+        }
+
         if (temperatura > 21.0) {
           generatedAlerts.add("Temperatura acima do recomendado (${temperatura.toStringAsFixed(1)}°C)");
         }else if (temperatura < 18.0) {
@@ -59,9 +70,9 @@ class _AlertasScreenState extends State<AlertasScreen> {
         }
 
         final double luminosidadeLoja = (data['luminosidadeloja'] as num?)?.toDouble() ?? 25.0;
-        if (luminosidadeLoja > 60) {
+        if (luminosidadeLoja > 70) {
           generatedAlerts.add("A luminosidade da loja está baixa, recomendado ligar as luzes");
-        }else{
+        }else if (luminosidadeLoja < 50){
           generatedAlerts.add("A luminosidade da loja está alta, recomendado apagar as luzes");
         }
 
@@ -72,6 +83,7 @@ class _AlertasScreenState extends State<AlertasScreen> {
 
       } else {
         print('Erro na requisição: ${response.statusCode}');
+        print('Erro na requisição: ${response2  .statusCode}');
         setState(() {
           _alertas = ["Erro ao carregar dados."];
           _isLoading = false;

@@ -74,7 +74,7 @@ class _LojaScreenState extends State<LojaScreen> {
           luzesLoja = parseStatus(data['ledloja']);
           arCondicionado = parseStatus(data['arcondicionadoloja']);
 
-          temperatura = (data['temperatura'] as num?)?.toDouble() ?? 25.0;
+          temperatura = (data['temperaturaloja'] as num?)?.toDouble() ?? 25.0;
 
           unidades_trufas = data['unidades_trufas'];
 

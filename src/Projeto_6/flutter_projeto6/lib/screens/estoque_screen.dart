@@ -47,7 +47,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
         setState(() {
           luzEstoque = parseStatus(data['ledestoque']);
           arLigado = parseStatus(data['arcondicionadoloja']);
-          temperatura = data['temperatura'] ?? "25°C";
+          temperatura = data['temperaturaloja'] ?? "25°C";
           unidades_trufas = data['unidades_trufas'];
           caixas_trufas = data['caixas_trufas'];
           isLoading = false;
