@@ -8,35 +8,38 @@
 // Definindo variáveis
 const int pinoDHT = 2;
 const int pinoLuz = 33;
-const int PINO_DT = 27;
-const int PINO_SCK = 26;
+const int PINO_DT1 = 27;
+const int PINO_SCK1 = 26;
+const int PINO_DT2 = 21;
+const int PINO_SCK2 = 13;
 const int LED_PIN = 19;
-const int AR_PIN = 27;
+const int AR_PIN = 18;
 const int LED_VERDE_PIN = 23;
 const int LED_AMARELO_PIN = 22;
 const int TEMPO_ESPERA = 3000;
-float fator_calibracao = -83000;
+float fator_calibracao1 = -83000;
+float fator_calibracao2 = -83000;
 #define tipoDHT DHT11
 
 // Instanciando objetos
-HX711 escala;
+HX711 escala1;
+HX711 escala2;
 DHT dht(pinoDHT, tipoDHT);
 
 // Configurações de rede do Esp32
-const char* ssid = "*";
-const char* password = "*";
-const char* tagoToken = "*";
+const char* ssid = "FAMILIA DOURADO";
+const char* password = "Dour@do01072004";
+const char* tagoToken = "53b9c773-1b1d-4c33-9805-ea36485ee8cb";
 
 void setup() {
   pinMode(LED_PIN, OUTPUT);
   pinMode(LED_VERDE_PIN, OUTPUT);
   pinMode(LED_AMARELO_PIN, OUTPUT);
+  pinMode(AR_PIN, OUTPUT);
   dht.begin();
 
   Serial.begin(115200);
   delay(2000);
-
-  Serial.println("=== Célula de carga - Calibração de Peso via HTTP ===");
 
   WiFi.begin(ssid, password);
   Serial.print("Conectando ao Wi-Fi");
@@ -47,32 +50,57 @@ void setup() {
   Serial.println("\nWi-Fi conectado!");
   Serial.print("IP: "); Serial.println(WiFi.localIP());
 
-  escala.begin(PINO_DT, PINO_SCK);
-  if (!escala.is_ready()) {
-    Serial.println("HX711 não está pronto! Verifique as conexões.");
+  escala1.begin(PINO_DT1, PINO_SCK1);
+  if (!escala1.is_ready()) {
+    Serial.println("Balança loja não disponivel! Verifique as conexões.");
   }
 
-  float media_leitura = escala.read_average();
-  Serial.print("Média de leituras sem carga: ");
-  Serial.println(media_leitura, 2);
+  escala2.begin(PINO_DT2, PINO_SCK2);
+  if (!escala1.is_ready()) {
+    Serial.println("Balança estoque não disponivel! Verifique as conexões.");
+  }
 
-  escala.tare();
-  Serial.println("Balança zerada.");
+  float media_leitura1 = escala1.read_average();
+  Serial.print("Média de leituras loja sem carga: ");
+  Serial.println(media_leitura1, 2);
+
+  float media_leitura2 = escala2.read_average();
+  Serial.print("Média de leituras estoque sem carga: ");
+  Serial.println(media_leitura2, 2);
+
+  escala1.tare();
+  Serial.println("Balança loja zerada.");
+
+  escala2.tare();
+  Serial.println("Balança estoque zerada.");
 }
 
 void loop() {
-  escala.set_scale(fator_calibracao);
+  escala1.set_scale(fator_calibracao1);
+  escala2.set_scale(fator_calibracao2);
 
-  if (escala.is_ready()) {
-    float peso = escala.get_units();
-    Serial.print("Leitura: ");
-    Serial.print(peso, 2);
+  if (escala1.is_ready()) {
+    float pesoloja = escala1.get_units();
+    Serial.print("Leitura loja: ");
+    Serial.print(pesoloja, 2);
     Serial.println(" kg");
 
     buscarDados();
-    enviarHTTP("peso", peso, "kg");
+    enviarHTTP("pesoloja", pesoloja, "kg");
   } else {
-    Serial.println("HX711 ocupado ou desconectado!");
+    Serial.println("Balança loja ocupado ou desconectado!");
+  }
+
+  if (escala2.is_ready()) {
+    float pesoestoque = escala2.get_units();
+    Serial.print("Leitura estoque: ");
+    Serial.print(pesoestoque, 2);
+    Serial.println(" kg");
+
+    buscarDados();
+    enviarHTTP("pesoestoque", pesoestoque, "kg");
+  } else {
+    Serial.println("Balança estoque ocupado ou desconectado!");
   }
 
   float temperatura = capturarTemperatura();
@@ -146,7 +174,6 @@ void enviarHTTP(char* nome, float var, char* unidade) {
     Serial.print("⚠️ Erro ao enviar dados: ");
     Serial.println(http.errorToString(httpResponseCode));
   }
-
   http.end();
 }
 
@@ -200,7 +227,7 @@ void buscarDados(){
       DeserializationError error = deserializeJson(doc, payload);
 
       if (!error) {
-        float peso = doc["peso"];
+        float pesoloja = doc["pesoloja"];
         float luminosidadeloja = doc["luminosidadeloja"];
         int temperatura = doc["temperatura"];
         const char* ledloja = doc["ledloja"];
@@ -208,13 +235,13 @@ void buscarDados(){
         const char* automacoes = doc["automacoes"];
         const char* cor = doc["cor"];
 
-        Serial.printf("Peso: %.3f\n", peso);
+        Serial.printf("Pesoloja: %.3f\n", pesoloja);
         Serial.printf("Temperatura: %d\n", temperatura);
         Serial.printf("LedLoja: %s\n", ledloja);
         Serial.printf("Cor Led Prateleira: %s\n", cor);
 
         if (strcmp(automacoes, "activate") == 0) {
-            if (luminosidadeloja > 50.00) {
+            if (luminosidadeloja > 70.00) {
               digitalWrite(LED_PIN, HIGH);
               enviarHTTP("ledloja", "activate", "");
               Serial.println("LED LOJA ATIVADO");

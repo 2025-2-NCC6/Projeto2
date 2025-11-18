@@ -1,22 +1,37 @@
-// Pino de entrada
-const int entrada = A0;
-const int saida = 9;
+const int pinoEntradaLuzLoja = 4; 
+const int pinoEntradaArLoja = 3;
+const int pinoSaidaLuzLoja = 8;
+const int pinoSaidaArLoja = 9;
+
 void setup() {
-  Serial.begin(9600);      // Inicia a comunicação serial (9600 baud)
-  pinMode(entrada, INPUT); // Define o pino 3 como entrada
-  pinMode(saida, OUTPUT);
+  pinMode(pinoEntradaLuzLoja, INPUT);
+  pinMode(pinoEntradaArLoja, INPUT);
+  pinMode(pinoSaidaLuzLoja, OUTPUT);
+  pinMode(pinoSaidaArLoja, OUTPUT);
+
+  Serial.begin(9600);
+  Serial.println("Programa iniciado. Monitorando Porta 4.");
 }
 
 void loop() {
-  int valor = analogRead(entrada); // Lê o valor do pino (0 ou 1)
-  
-  if(valor > 200){
-    digitalWrite(saida,HIGH);
-  }else{
-    digitalWrite(saida,LOW);
+  int estadoEntradaLuzLoja = digitalRead(pinoEntradaLuzLoja);
+  int estadoEntradaArLoja = digitalRead(pinoEntradaArLoja);
+
+  if (estadoEntradaLuzLoja == HIGH) {
+    digitalWrite(pinoSaidaLuzLoja, HIGH);
+    Serial.println("Entrada (Pino 4): HIGH -> Saída (Pino 8): HIGH");
+  } else {
+    digitalWrite(pinoSaidaLuzLoja, LOW);
+    Serial.println("Entrada (Pino 4): LOW -> Saída (Pino 8): LOW");
   }
-  Serial.print("Valor lido na porta 3: ");
-  Serial.println(valor);   // Imprime o valor no monitor serial
-  
-  delay(500);              // Aguarda 500 ms para facilitar a leitura
+
+  if (estadoEntradaArLoja == HIGH) {
+    digitalWrite(pinoSaidaArLoja, HIGH);
+    Serial.println("Entrada (Pino 5): HIGH -> Saída (Pino 9): HIGH");
+  } else {
+    digitalWrite(pinoSaidaArLoja, LOW);
+    Serial.println("Entrada (Pino 5): LOW -> Saída (Pino 9): LOW");
+  }
+
+  delay(2000);
 }
